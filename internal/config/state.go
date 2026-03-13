@@ -1,5 +1,10 @@
 package config
 
+import(
+	"github.com/Dxnax-RS/gator/internal/database"
+)
+
 type State struct{
-	Current_State *config
+	Db  *database.Queries
+	Cfg *config
 }

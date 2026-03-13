@@ -1,11 +1,15 @@
 package main
 
+import _ "github.com/lib/pq"
+
 import(
 	"fmt"
 	"errors"
 	"os"
+	"database/sql"
 	"github.com/Dxnax-RS/gator/internal/commands"
 	"github.com/Dxnax-RS/gator/internal/config"
+	"github.com/Dxnax-RS/gator/internal/database"
 )
 
 func main(){
@@ -30,11 +34,25 @@ func main(){
 		os.Exit(1)
 	}
 
+	db, err := sql.Open("postgres", cfg.Db_url)
+	dbQueries := database.New(db)
+
 	var myState config.State
-	myState.Current_State = &cfg
+	myState.Db = dbQueries
+	myState.Cfg = &cfg
 
 	commandList := commands.NewCommands()
 	commandList.Register("login", commands.HandlerLogin)
+	commandList.Register("register", commands.RegisterUser)
+	commandList.Register("reset", commands.ResetUserTable)
+	commandList.Register("users", commands.GetAllUsers)
+	commandList.Register("agg", commands.Aggregator)
+	commandList.Register("addfeed", commands.MiddlewareLoggedIn(commands.RegisterFeed))
+	commandList.Register("feeds", commands.GetAllFeeds)
+	commandList.Register("follow", commands.MiddlewareLoggedIn(commands.RegisterFollow))
+	commandList.Register("following", commands.MiddlewareLoggedIn(commands.GetUserFollows))
+	commandList.Register("unfollow", commands.MiddlewareLoggedIn(commands.DeleteFollow))
+	commandList.Register("browse", commands.MiddlewareLoggedIn(commands.BrowsePosts))
 	err = commandList.Run(&myState, cmd)
 	if err != nil {
 		fmt.Println(err)
